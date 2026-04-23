@@ -67,12 +67,12 @@ def grover(filename):
 
     # 5. Create the plot
     plt.figure(figsize=(10, 6))
-    plt.scatter(iterations, probabilities, marker='o', linestyle='-', color='r', label = "Simulation Data")
     
     theta = np.arcsin(1 / np.sqrt(8))
-    iters_smooth = np.linspace(0, len(probabilities) - 1, 500)
+    iters_smooth = np.linspace(0, len(probabilities), 500)
     y_smooth = np.sin((2 * iters_smooth + 1) * theta) ** 2
     plt.plot(iters_smooth, y_smooth, label="Grover Expectation")
+    plt.scatter(iterations, probabilities, marker='o', linestyle='-', color='r', label = "Simulation Data")
 
     plt.title(rf"Probability Oscillations"
               f"\n"
