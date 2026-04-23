@@ -1,11 +1,13 @@
 #include <iostream>
 #include <Eigen/Core>
 #include <Eigen/Dense>
+#include <bitset>
 #include <math.h>
 #include <complex>
 
 //m(col,row)
 
+// Print out matrix with each value separated by a tab space
 void ppComplexMatrix(Eigen::MatrixXcd m) {
     int rows = m.rows();
     int cols = m.cols();
@@ -15,13 +17,12 @@ void ppComplexMatrix(Eigen::MatrixXcd m) {
             auto el = m(j, i);
             auto real = el.real();
             auto imag = el.imag();
-            //untested...
+            
             if (real != 0 && imag != 0) {
                 if (imag > 0) std::cout << real << '+' << imag << "i\t";
                 else std::cout << real << imag << "i\t";
             }
-            //untested...
-            //TODO: Padding not correct
+            
             else if (real != 0) std::cout << real << "\t";
             else if (imag == 0) std::cout << "0\t";
             else std::cout << imag << "i\t";
@@ -31,8 +32,7 @@ void ppComplexMatrix(Eigen::MatrixXcd m) {
     std::cout << "\n\n";
 }
 
-
-
+// Use QFT formula to generate omega and the full QFT Matrix
 Eigen::MatrixXcd generateQftMatrix(int m, int n) {
     Eigen::MatrixXcd U_qft(m, n);
     double th = (2 * M_PI) / m;
@@ -46,24 +46,25 @@ Eigen::MatrixXcd generateQftMatrix(int m, int n) {
             U_qft(i, j) = ij;
         }
     }
-    //int N = std::pow(2,m);
+    
     return U_qft;
-
 }
 
+// Generate Uquery based on the target bit
 Eigen::MatrixXd generateQueryMatrix(int m, int n, int target) {
     Eigen::MatrixXd U_query = Eigen::MatrixXd::Identity(m, n);
     U_query(target, target) = -1.0;
     return U_query;
 }
 
-
+// Generate U0 based on the input bit
 Eigen::MatrixXd generateFlipMatrix(int m, int n, int input) {
     Eigen::MatrixXd U_0 = -1.0 * Eigen::MatrixXd::Identity(m, n);
     U_0(input, input) = 1.0;
     return U_0;
 }
 
+// Do Grover's Algorithm for numIters number of iterations, returning back the amplitude values
 Eigen::MatrixXcd grover(int m, int input, int target, int numIters) {
     Eigen::VectorXd d0 = Eigen::VectorXd::Unit(m, input);
 
@@ -71,7 +72,8 @@ Eigen::MatrixXcd grover(int m, int input, int target, int numIters) {
     Eigen::MatrixXcd U_qfti = U_qft.inverse();
     
     // debug for checking matrix contents
-    // ppComplexMatrix(U_qft);
+    //ppComplexMatrix(U_qft);
+    //ppComplexMatrix(U_qfti);
 
     Eigen::MatrixXd U_query = generateQueryMatrix(m, m, target);
     Eigen::MatrixXd U_0 = generateFlipMatrix(m, m, input);
@@ -87,7 +89,8 @@ Eigen::MatrixXcd grover(int m, int input, int target, int numIters) {
     return acc;
 }
 
-Eigen::MatrixXd probabilityValues(Eigen::MatrixXcd results) {
+// Calculate probability values from amplitude results
+Eigen::VectorXd probabilityValues(Eigen::MatrixXcd results) {
     Eigen::VectorXd ret = results.real();
     for (size_t i = 0; i < ret.size(); i++) {
         ret(i) = ret(i) * ret(i);
@@ -95,65 +98,71 @@ Eigen::MatrixXd probabilityValues(Eigen::MatrixXcd results) {
     return ret;
 }
 
+// Function for gathering probability values of the target bit after each iteration
+//    of Grover's operator usage
+std::vector<double> groverStatistics(int m, int input, int target, int numIters) {
+    std::vector<double> ret;
+    Eigen::VectorXd d0 = Eigen::VectorXd::Unit(m, input);
+
+    Eigen::MatrixXcd U_qft = generateQftMatrix(m, m);
+    Eigen::MatrixXcd U_qfti = U_qft.inverse();
+
+    Eigen::MatrixXd U_query = generateQueryMatrix(m, m, target);
+    Eigen::MatrixXd U_0 = generateFlipMatrix(m, m, input);
+
+    // Append first 'balanced' probability at time step 0
+    Eigen::VectorXcd acc = U_qft * d0;
+    Eigen::VectorXd prob = probabilityValues(acc);
+    ret.push_back(prob[target]);
+
+    Eigen::MatrixXcd groverOperator = U_qfti * U_0 * U_qft * U_query;
+
+    // Iterate numIters number of times, appending probabilites in-between
+    for (size_t i = 1; i < numIters; i++) {
+        acc = groverOperator * acc;
+        prob = probabilityValues(acc);
+        ret.push_back(prob[target]);
+    }
+
+    return ret;
+}
+
 int main() {
     // Number of Qubits
-    int N = 3;
+    const int N = 3;
 
     // Input bit and target bit
     int input = 0;
-    int target = 7;
+    int target = 3;
 
     // Variable for number of grover iterations for better control
-    int numIters = std::floor(sqrt(std::pow(2, N)));
+    int numIters = std::round(sqrt(std::pow(2, N)));
 
     Eigen::MatrixXcd result = grover(std::pow(2, N), input, target, numIters);
 
     // Turn result amplitude coefficients into probability values
     Eigen::VectorXd probs = probabilityValues(result);
-  
-    std::cout << "Final Coefficients:" << std::endl << result.real() << std::endl;
-    std::cout << "Probability of each Result:" << std::endl << probs << std::endl;
+    Eigen::VectorXd coefs = result.real();
 
+    std::cout << "Final Coefficients:" << std::endl;
+    for (int i = 0; i < coefs.size(); i++) {
+        std::cout << coefs[i] <<"\t|" << std::bitset<N>(i).to_string() << ">" << std::endl;
+    }
+
+    std::cout << std::endl << "Probability of each Result:" << std::endl;
+    for (int i = 0; i < probs.size(); i++) {
+        std::cout << "Bit " << i << ": " << probs[i] * 100 << "%" << std::endl;
+    }
+    
     /*
-    Not working as expected. Here is current output for 3 bit system:
+    // Code for running statistics generation in order to create tables for Part 3
+    int testingIters = 40;
+    std::vector<double> probs = groverStatistics(std::pow(2, N), input, target, testingIters);
 
-
-    -0.0883883
-    -0.0883883
-    -0.0883883
-    -0.0883883
-    -0.0883883
-    -0.0883883
-    -0.0883883
-      0.972272
-
-    Do not think negative values are accepptable. May be somthing with amount of iterations.
-    If you do sqrt(N) - 1 iterations, here is the output
-
-
-    0.176777
-    0.176777
-    0.176777
-    0.176777
-    0.176777
-    0.176777
-    0.176777
-    0.883883
-
-    which also should not be acceptable.
-
-
-    This actually is acceptable, as they're amplitude values and not probability values
-    When you square it, you get the probability that the correlated bit will be the one that
-       is found when measuring. When changing N to 2, and the target to a valid bit, it works
-       perfectly. When changing N to 3 and choosing a valid bit, it also works properly, but
-       because sqrt(2^3) == 2.82, it's not perfect after a specific number of iterations, so
-       we choose to stop at the lower bound (according to Dr. Cahay), but if you run it one
-       more time after that in this configuration then it acutally does better than at the
-       lower bound. If you run it one more past that, though, then the probability of getting
-       the correct element goes down again.
-
+    for (int i = 0; i < probs.size(); i++) {
+        std::cout << probs[i] << std::endl;
+    }
     */
-
+    
     return 0;
 }
