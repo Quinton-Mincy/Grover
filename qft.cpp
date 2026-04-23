@@ -4,6 +4,7 @@
 #include <bitset>
 #include <math.h>
 #include <complex>
+#include <fstream>
 
 //m(col,row)
 
@@ -106,7 +107,9 @@ Eigen::VectorXd probabilityValues(Eigen::MatrixXcd results) {
 
 // Function for gathering probability values of the target bit after each iteration
 //    of Grover's operator usage
-std::vector<double> groverStatistics(int m, int input, int target, int numIters) {
+std::vector<double> groverStatistics(int numQubits, int input, int target, int numIters) {
+    int  m = std::pow(2, numQubits);
+
     std::vector<double> ret;
     Eigen::VectorXd d0 = Eigen::VectorXd::Unit(m, input);
 
@@ -123,53 +126,90 @@ std::vector<double> groverStatistics(int m, int input, int target, int numIters)
 
     Eigen::MatrixXcd groverOperator = U_qfti * U_0 * U_qft * U_query;
 
+
+    std::ofstream outFile("data.txt");
+    outFile << numQubits << " " << input << " " << target << " " << numIters << "\n";
+      
     // Iterate numIters number of times, appending probabilites in-between
     for (size_t i = 0; i < numIters; i++) {
         acc = groverOperator * acc;
         prob = probabilityValues(acc);
         ret.push_back(prob[target]);
+
+        outFile << i+1 << " " << prob[target] << "\n";
+
     }
+    outFile.close();
 
     return ret;
 }
 
 int main() {
     // Number of Qubits
-    const int numQubits = 3;
+    int numQubits;
 
     // Input bit and target bit
-    int input = 0;
-    int target = 3;
+    int input;
+    int target;
 
     // Variable for number of grover iterations for better control
-    int numIters = std::floor(sqrt(std::pow(2, numQubits)));
+   // int numIters = std::floor(sqrt(std::pow(2, numQubits)));
+   // 
+   // Eigen::MatrixXcd result = grover(std::pow(2, numQubits), input, target, numIters);
+
+   // // Turn result amplitude coefficients into probability values
+   // Eigen::VectorXd probs = probabilityValues(result);
+   // Eigen::VectorXd coefs = result.real();
+
+   // std::cout << "Final Coefficients:" << std::endl;
+   // for (int i = 0; i < coefs.size(); i++) {
+   //     std::cout << coefs[i] <<"\t|" << std::bitset<numQubits>(i).to_string() << ">" << std::endl;
+   // }
+
+   // std::cout << std::endl << "Probability of each Result:" << std::endl;
+   // for (int i = 0; i < probs.size(); i++) {
+   //     std::cout << "Bit " << i << ": " << probs[i] * 100 << "%" << std::endl;
+   // }
     
-    Eigen::MatrixXcd result = grover(std::pow(2, numQubits), input, target, numIters);
 
-    // Turn result amplitude coefficients into probability values
-    Eigen::VectorXd probs = probabilityValues(result);
-    Eigen::VectorXd coefs = result.real();
+    std::cout << "Number of Qubits: ";
+    std::cin >> numQubits;
 
-    std::cout << "Final Coefficients:" << std::endl;
-    for (int i = 0; i < coefs.size(); i++) {
-        std::cout << coefs[i] <<"\t|" << std::bitset<numQubits>(i).to_string() << ">" << std::endl;
+    std::cout << "Input State: (0-"<<std::pow(2, numQubits)-1<<"): ";
+    std::cin >> input;
+
+    if(input<0 || input > std::pow(2, numQubits)-1){
+        std::cout << "Invalid input state provided. Exiting program.\n";
+        return 1;
     }
 
-    std::cout << std::endl << "Probability of each Result:" << std::endl;
-    for (int i = 0; i < probs.size(); i++) {
-        std::cout << "Bit " << i << ": " << probs[i] * 100 << "%" << std::endl;
+    std::cout << "Target State: (0-"<<std::pow(2, numQubits)-1<<"): ";
+    std::cin >> target;
+
+    if(target<0 || target > std::pow(2, numQubits)-1){
+        std::cout << "Invalid target state provided. Exiting program.\n";
+        return 1;
     }
-    
-    
-    /*
+
+    int testingIters;
+
+    std::cout << "Enter number of iterations: ";
+    std::cin >> testingIters;
+
+    if(testingIters<0){
+        std::cout << "Iterations must be non-negative value.\n";
+        return 1;
+    }
+
+
     // Code for running statistics generation in order to create tables for Part 3
-    int testingIters = 40;
-    std::vector<double> probs = groverStatistics(std::pow(2, numQubits), input, target, testingIters);
 
-    for (int i = 0; i < probs.size(); i++) {
-        std::cout << probs[i] << std::endl;
-    }
-    */
+    std::vector<double> probs = groverStatistics(numQubits, input, target, testingIters);
+
+    //for (int i = 0; i < probs.size(); i++) {
+    //    std::cout << probs[i] << std::endl;
+    //}
+   
     
     return 0;
 }
