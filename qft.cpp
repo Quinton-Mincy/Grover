@@ -81,9 +81,15 @@ Eigen::MatrixXcd grover(int m, int input, int target, int numIters) {
     Eigen::VectorXcd acc = U_qft * d0;
     Eigen::MatrixXcd groverOperator = U_qfti * U_0 * U_qft * U_query;
 
-    // Iterate numIters number of times
-    for (size_t i = 1; i < numIters; i++) {
+    // Handle 2 qubit situation
+    if (m == 4) {
         acc = groverOperator * acc;
+    }
+    else {
+        // otherwise, Iterate numIters number of times
+        for (size_t i = 0; i < numIters; i++) {
+            acc = groverOperator * acc;
+        }
     }
 
     return acc;
@@ -118,7 +124,7 @@ std::vector<double> groverStatistics(int m, int input, int target, int numIters)
     Eigen::MatrixXcd groverOperator = U_qfti * U_0 * U_qft * U_query;
 
     // Iterate numIters number of times, appending probabilites in-between
-    for (size_t i = 1; i < numIters; i++) {
+    for (size_t i = 0; i < numIters; i++) {
         acc = groverOperator * acc;
         prob = probabilityValues(acc);
         ret.push_back(prob[target]);
@@ -129,16 +135,16 @@ std::vector<double> groverStatistics(int m, int input, int target, int numIters)
 
 int main() {
     // Number of Qubits
-    const int N = 3;
+    const int numQubits = 3;
 
     // Input bit and target bit
     int input = 0;
     int target = 3;
 
     // Variable for number of grover iterations for better control
-    int numIters = std::round(sqrt(std::pow(2, N)));
-
-    Eigen::MatrixXcd result = grover(std::pow(2, N), input, target, numIters);
+    int numIters = std::floor(sqrt(std::pow(2, numQubits)));
+    
+    Eigen::MatrixXcd result = grover(std::pow(2, numQubits), input, target, numIters);
 
     // Turn result amplitude coefficients into probability values
     Eigen::VectorXd probs = probabilityValues(result);
@@ -146,7 +152,7 @@ int main() {
 
     std::cout << "Final Coefficients:" << std::endl;
     for (int i = 0; i < coefs.size(); i++) {
-        std::cout << coefs[i] <<"\t|" << std::bitset<N>(i).to_string() << ">" << std::endl;
+        std::cout << coefs[i] <<"\t|" << std::bitset<numQubits>(i).to_string() << ">" << std::endl;
     }
 
     std::cout << std::endl << "Probability of each Result:" << std::endl;
@@ -154,10 +160,11 @@ int main() {
         std::cout << "Bit " << i << ": " << probs[i] * 100 << "%" << std::endl;
     }
     
+    
     /*
     // Code for running statistics generation in order to create tables for Part 3
     int testingIters = 40;
-    std::vector<double> probs = groverStatistics(std::pow(2, N), input, target, testingIters);
+    std::vector<double> probs = groverStatistics(std::pow(2, numQubits), input, target, testingIters);
 
     for (int i = 0; i < probs.size(); i++) {
         std::cout << probs[i] << std::endl;
