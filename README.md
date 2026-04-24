@@ -11,4 +11,4 @@ Final Project For EECE 6045 - Intro to Quantum Computing at the University of Ci
   Enter number of iterations: 100
 > python3 plot.py
 ```
-<img width="1000" height="600" alt="Image" src="https://github.com/user-attachments/assets/82559c76-c396-494c-8636-847f90da0550" />
+<img width="1000" height="600" alt="Image" src="https://github.com/user-attachments/assets/28c1aaf2-9b7d-49b7-9a57-2064306a0df6" />
