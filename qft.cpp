@@ -96,18 +96,10 @@ Eigen::MatrixXcd grover(int m, int input, int target, int numIters) {
 // Calculate probability values from amplitude results
 Eigen::VectorXd probabilityValues(Eigen::VectorXcd results) {
     /*Should it be the amplitude squared or just the real part squared?*/
-    //Eigen::VectorXd ret = results.real();
-    //for (size_t i = 0; i < ret.size(); i++) {
-    //    ret(i) = ret(i) * ret(i);
-    //}
-    //return ret;
-    Eigen::VectorXd ret(results.size());
-
-    for (int i = 0; i < results.size(); i++) {
-        std::complex<double> amp = results(i);
-        ret(i) = std::norm(amp);
+    Eigen::VectorXd ret = results.real();
+    for (size_t i = 0; i < ret.size(); i++) {
+        ret(i) = ret(i) * ret(i);
     }
-
     return ret;
 }
 
