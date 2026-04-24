@@ -1,52 +1,7 @@
-import subprocess
 import os
 import matplotlib.pyplot as plt
-import sys
 import numpy as np
 
-#def grover():
-
-
-   # if sys.platform.startswith('win32'):
-   #     executable = "qft.exe"
-   #     run_cmd = [executable]
-   # else:
-   #     executable = "qft"
-   #     run_cmd = ["./" + executable]
-   #    
-   # compile_cmd = ["g++", "-o",executable, "qft.cpp", "-Ieigen", "-lm"]
-   # 
-   # print("Compiling...")
-   # compilation = subprocess.run(compile_cmd, capture_output=True, text=True)
-   # 
-   # if compilation.returncode != 0:
-   #     print("Compilation Failed.")
-   #     return
-
-   # execution = subprocess.run(run_cmd)
-
-   # #returns 1 if invalid input/target index is given
-   # if execution.returncode == 0:
-   #     plot_data("data.txt")
-
-   # else:
-   #     return
-#import matplotlib.pyplot as plt
-#
-#def plot_with_grover_fit(probabilities):
-#    iters = np.arange(len(probabilities))
-#    y = np.array(probabilities)
-#
-#    # Grover parameter for N = 8
-#    theta = np.arcsin(1 / np.sqrt(8))
-#
-#    # Smooth curve matching grover's theory
-#    iters_smooth = np.linspace(0, len(probabilities) - 1, 500)
-#    y_smooth = np.sin((2 * iters_smooth + 1) * theta) ** 2
-#
-#    plt.plot(iters_smooth, y_smooth, label="Grover Expectation")
-#
-#    plt.legend()
 def grover(filename):
     iterations = []
     probabilities = []
@@ -67,12 +22,13 @@ def grover(filename):
 
     # 5. Create the plot
     plt.figure(figsize=(10, 6))
+    plt.scatter(iterations, probabilities, marker='o', linestyle='-', color='r', label = "Simulation Data")
     
-    theta = np.arcsin(1 / np.sqrt(8))
+    theta = np.arcsin(1 / np.sqrt(2**int(qbits)))
+    #theta = np.arcsin(1 / np.sqrt(8))
     iters_smooth = np.linspace(0, len(probabilities), 500)
     y_smooth = np.sin((2 * iters_smooth + 1) * theta) ** 2
     plt.plot(iters_smooth, y_smooth, label="Grover Expectation")
-    plt.scatter(iterations, probabilities, marker='o', linestyle='-', color='r', label = "Simulation Data")
 
     plt.title(rf"Probability Oscillations"
               f"\n"
