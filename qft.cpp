@@ -7,7 +7,7 @@
 #include <fstream>
 
 //m(col,row)
-
+#define PI 3.1415926535
 // Print out matrix with each value separated by a tab space
 void ppComplexMatrix(Eigen::MatrixXcd m) {
     int rows = m.rows();
@@ -36,14 +36,11 @@ void ppComplexMatrix(Eigen::MatrixXcd m) {
 // Use QFT formula to generate omega and the full QFT Matrix
 Eigen::MatrixXcd generateQftMatrix(int m, int n) {
     Eigen::MatrixXcd U_qft(m, n);
-    double th = (2 * M_PI) / m;
+    double th = (2 * PI) / m;
     std::complex<double>w(cos(th), sin(th));//e^(i*theta)
     for (size_t j = 0; j < n; j++) {//columns
         for (size_t i = 0; i < m; i++) {//rows
             auto ij = std::pow(w, i * j) / sqrt(m);//i^(col*row)
-            //round off floating point errors
-            if (fabs(ij.real()) < 1e-15) ij.real(0);
-            if (fabs(ij.imag()) < 1e-15) ij.imag(0);
             U_qft(i, j) = ij;
         }
     }
@@ -97,18 +94,27 @@ Eigen::MatrixXcd grover(int m, int input, int target, int numIters) {
 }
 
 // Calculate probability values from amplitude results
-Eigen::VectorXd probabilityValues(Eigen::MatrixXcd results) {
-    Eigen::VectorXd ret = results.real();
-    for (size_t i = 0; i < ret.size(); i++) {
-        ret(i) = ret(i) * ret(i);
+Eigen::VectorXd probabilityValues(Eigen::VectorXcd results) {
+    /*Should it be the amplitude squared or just the real part squared?*/
+    //Eigen::VectorXd ret = results.real();
+    //for (size_t i = 0; i < ret.size(); i++) {
+    //    ret(i) = ret(i) * ret(i);
+    //}
+    //return ret;
+    Eigen::VectorXd ret(results.size());
+
+    for (int i = 0; i < results.size(); i++) {
+        std::complex<double> amp = results(i);
+        ret(i) = std::norm(amp);
     }
+
     return ret;
 }
 
 // Function for gathering probability values of the target bit after each iteration
 //    of Grover's operator usage
 std::vector<double> groverStatistics(int numQubits, int input, int target, int numIters) {
-    int  m = std::pow(2, numQubits);
+    size_t  m = std::pow(2, numQubits);
 
     std::vector<double> ret;
     Eigen::VectorXd d0 = Eigen::VectorXd::Unit(m, input);
@@ -130,6 +136,7 @@ std::vector<double> groverStatistics(int numQubits, int input, int target, int n
     std::ofstream outFile("data.txt");
     outFile << numQubits << " " << input << " " << target << " " << numIters << "\n";
       
+    outFile << 0 << " " << prob[target] << "\n";
     // Iterate numIters number of times, appending probabilites in-between
     for (size_t i = 0; i < numIters; i++) {
         acc = groverOperator * acc;
@@ -175,29 +182,32 @@ int main() {
     std::cout << "Number of Qubits: ";
     std::cin >> numQubits;
 
-    std::cout << "Input State: (0-"<<std::pow(2, numQubits)-1<<"): ";
+    int N = std::pow(2, numQubits);
+
+    std::cout << "Input State: (0-"<<N-1<<"): ";
     std::cin >> input;
 
-    if(input<0 || input > std::pow(2, numQubits)-1){
+    if(input<0 || input > N-1){
         std::cout << "Invalid input state provided. Exiting program.\n";
         return 1;
     }
 
-    std::cout << "Target State: (0-"<<std::pow(2, numQubits)-1<<"): ";
+    std::cout << "Target State: (0-"<<N-1<<"): ";
     std::cin >> target;
 
-    if(target<0 || target > std::pow(2, numQubits)-1){
+    if(target<0 || target > N-1){
         std::cout << "Invalid target state provided. Exiting program.\n";
         return 1;
     }
 
+    int minIters = std::floor(sqrt(std::pow(2, numQubits)));
     int testingIters;
 
-    std::cout << "Enter number of iterations: ";
+    std::cout << "Enter number of iterations (minimum  " << minIters << "): ";
     std::cin >> testingIters;
 
-    if(testingIters<0){
-        std::cout << "Iterations must be non-negative value.\n";
+    if(testingIters<=0){
+        std::cout << "Iterations must be a positive, non-zero value.\n";
         return 1;
     }
 
