@@ -12,3 +12,16 @@ Final Project For EECE 6045 - Intro to Quantum Computing at the University of Ci
 > python3 plot.py
 ```
 <img width="1000" height="600" alt="Image" src="https://github.com/user-attachments/assets/28c1aaf2-9b7d-49b7-9a57-2064306a0df6" />
+
+If you have a few minues... 
+
+```bash
+> g++ qft.cpp -I./eigen -o qft -lm
+> ./qft 
+  Number of Qubits: 10
+  Input State: (0-7): 0
+  Target State: (0-7): 3
+  Enter number of iterations: 100
+> python3 plot.py
+```
+<img width="1000" height="600" alt="Image" src="https://github.com/user-attachments/assets/7ef19cb7-fcd9-42a8-bad6-45304c1bc538" />
